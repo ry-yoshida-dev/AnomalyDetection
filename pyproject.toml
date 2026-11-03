@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "anomaly-detection"
+version = "0.0.1"
+authors = [
+  { name = "Ryuto Yoshida" },
+]
+description = "Decide whether feature vectors are normal or anomalous with supervised, unsupervised, and zero-shot methods behind a common processor API."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "data-scaler @ git+https://github.com/ry-yoshida-dev/DataScaler.git@8f17cfff6d93d7a28756e2d05eac4bd1996becfc",
+    "numpy>=2.0",
+    "scikit-learn>=1.8",
+]
+
+[project.urls]
+Homepage = "https://github.com/ry-yoshida-dev/AnomalyDetection"
+"Bug Tracker" = "https://github.com/ry-yoshida-dev/AnomalyDetection/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pyright]
+stubPath = "stubs"
+exclude = ["stubs", ".venv"]
+
+[tool.mypy]
+mypy_path = "stubs:src"
+files = ["src", "tests"]
+explicit_package_bases = true
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "src"]
+filterwarnings = ["error"]
+
+[dependency-groups]
+dev = [
+    "basedpyright",
+    "mypy",
+    "pytest",
+    "ruff",
+]
+
+[tool.ruff]
+target-version = "py312"
+extend-exclude = ["stubs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501"]
