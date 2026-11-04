@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import override
 
 import numpy as np
-from data_scaler import FeatureScaling, Scaler, TransformerLike
+from data_scaler import FeatureScaling, Scaler
 from sklearn.exceptions import NotFittedError
 
 from ..feature_validator import FeatureValidator
@@ -32,9 +32,7 @@ class UnsupervisedProcessor(AnomalyProcessor, ABC):
 
     contamination: float
     scaling: FeatureScaling
-    _scaler: Scaler[TransformerLike] | None = field(
-        default=None, init=False, repr=False
-    )
+    _scaler: Scaler | None = field(default=None, init=False, repr=False)
     _threshold: float | None = field(default=None, init=False, repr=False)
 
     def fit(self, X: NumericArray) -> None:
@@ -57,7 +55,7 @@ class UnsupervisedProcessor(AnomalyProcessor, ABC):
         self._scaler = None
         self._threshold = None
         FeatureValidator.require_matrix(X)
-        scaler: Scaler[TransformerLike] = self.scaling.build_scaler()
+        scaler: Scaler = self.scaling.build_scaler()
         training_scores: FloatArray = self._fit_scorer(scaler.fit_transform(X))
         self._threshold = float(np.quantile(training_scores, 1.0 - self.contamination))
         self._scaler = scaler
