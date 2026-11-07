@@ -15,17 +15,25 @@ license-files = ["LICENSE"]
 requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
 ]
 dependencies = [
     "data-scaler @ git+https://github.com/ry-yoshida-dev/DataScaler.git@fff3316a8cb5ddc689a5194f7183688f787da7c7",
-    "numpy>=2.2",
+    # NumPy publishes wheels for Python 3.14 from 2.3.2.
+    "numpy>=2.2; python_version < '3.14'",
+    "numpy>=2.3.2; python_version >= '3.14'",
     "scikit-learn>=1.8",
 ]
 
 [project.urls]
 Homepage = "https://github.com/ry-yoshida-dev/AnomalyDetection"
 "Bug Tracker" = "https://github.com/ry-yoshida-dev/AnomalyDetection/issues"
+
+[tool.uv]
+exclude-newer = "7 days"
 
 [tool.setuptools.packages.find]
 where = ["src"]

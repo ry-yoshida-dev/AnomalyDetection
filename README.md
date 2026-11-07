@@ -16,6 +16,8 @@ For module-level design notes, see [src/anomaly_detection/README.md](src/anomaly
 
 ## Installation
 
+Requires Python 3.12 or later; CI tests 3.12, 3.13, and 3.14.
+
 From the package root (the directory containing `pyproject.toml`):
 
 ```bash
@@ -107,7 +109,7 @@ uv run basedpyright src tests
 uv run pytest
 ```
 
-The same checks run in CI on every push to `main` and every pull request, along with the tests on the minimum supported dependency versions.
+The same checks run in CI on every push to `main` and every pull request, along with the tests on the minimum supported dependency versions for each Python version. Dependency resolution skips releases newer than 7 days (`exclude-newer` in `pyproject.toml`).
 
 ## License
 
