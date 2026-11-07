@@ -14,6 +14,7 @@ from anomaly_detection.unsupervised import (
     LocalOutlierFactorParameters,
     MahalanobisParameters,
     OneClassSVMParameters,
+    PrincipalComponentParameters,
     SVMGamma,
     SVMKernel,
     UnsupervisedParameters,
@@ -22,12 +23,17 @@ from anomaly_detection.unsupervised import (
 
 from .data import SyntheticFeatures
 
-ALL_METHODS: tuple[UnsupervisedParameters, ...] = (
+# Methods that flag samples far from isotropic training samples in every direction.
+DISTANCE_METHODS: tuple[UnsupervisedParameters, ...] = (
     IsolationForestParameters(),
     LocalOutlierFactorParameters(),
     OneClassSVMParameters(),
     MahalanobisParameters(),
     KNearestNeighborsParameters(),
+)
+ALL_METHODS: tuple[UnsupervisedParameters, ...] = (
+    *DISTANCE_METHODS,
+    PrincipalComponentParameters(),
 )
 
 
@@ -35,7 +41,7 @@ class TestAllMethods(unittest.TestCase):
     def test_detects_far_samples_and_ranks_them_higher(self) -> None:
         X: NDArray[np.float64] = SyntheticFeatures.normal()
         anomalous: NDArray[np.float64] = SyntheticFeatures.anomalous()
-        for parameters in ALL_METHODS:
+        for parameters in DISTANCE_METHODS:
             with self.subTest(method=type(parameters).__name__):
                 processor: UnsupervisedProcessor = parameters.build_processor()
                 processor.fit(X)
@@ -49,13 +55,8 @@ class TestAllMethods(unittest.TestCase):
     ) -> None:
         X: NDArray[np.float64] = SyntheticFeatures.normal(n_samples=1000)
         unseen: NDArray[np.float64] = SyntheticFeatures.normal(n_samples=2000, seed=5)
-        for parameters in (
-            IsolationForestParameters(contamination=0.1),
-            LocalOutlierFactorParameters(contamination=0.1),
-            OneClassSVMParameters(contamination=0.1),
-            MahalanobisParameters(contamination=0.1),
-            KNearestNeighborsParameters(contamination=0.1),
-        ):
+        for parameters in ALL_METHODS:
+            parameters = type(parameters)(contamination=0.1)
             with self.subTest(method=type(parameters).__name__):
                 processor: UnsupervisedProcessor = parameters.build_processor()
                 processor.fit(X)
@@ -222,6 +223,57 @@ class TestCosineScaling(unittest.TestCase):
                 _ = KNearestNeighborsParameters(
                     metric=NeighborsMetric.COSINE, scaling=scaling
                 )
+
+
+class TestPrincipalComponent(unittest.TestCase):
+    def test_flags_samples_off_the_subspace_of_normal_samples(self) -> None:
+        rng: np.random.Generator = np.random.default_rng(0)
+        mixing: NDArray[np.float64] = rng.standard_normal((3, 20))
+        X: NDArray[np.float64] = rng.standard_normal(
+            (500, 3)
+        ) @ mixing + 0.05 * rng.standard_normal((500, 20))
+        on_subspace: NDArray[np.float64] = rng.standard_normal((50, 3)) @ mixing
+        off_subspace: NDArray[np.float64] = on_subspace + rng.standard_normal((50, 20))
+        processor: UnsupervisedProcessor = PrincipalComponentParameters(
+            n_components=3
+        ).build_processor()
+        processor.fit(X)
+        self.assertTrue(processor.predict(off_subspace).all())
+        self.assertLess(float(processor.predict(on_subspace).mean()), 0.1)
+
+    def test_explained_variance_keeps_the_dominant_directions(self) -> None:
+        rng: np.random.Generator = np.random.default_rng(0)
+        X: NDArray[np.float64] = rng.standard_normal((500, 4)) * np.array(
+            [10.0, 10.0, 0.1, 0.1]
+        )
+        processor: UnsupervisedProcessor = PrincipalComponentParameters(
+            explained_variance=0.9, scaling=FeatureScaling.NONE
+        ).build_processor()
+        processor.fit(X)
+        self.assertFalse(processor.predict(np.array([[30.0, -30.0, 0.0, 0.0]]))[0])
+        self.assertTrue(processor.predict(np.array([[0.0, 0.0, 1.0, 1.0]]))[0])
+
+    def test_rejects_too_many_components_or_a_single_feature(self) -> None:
+        with self.assertRaises(ValueError):
+            PrincipalComponentParameters(n_components=4).build_processor().fit(
+                SyntheticFeatures.normal()
+            )
+        with self.assertRaises(ValueError):
+            PrincipalComponentParameters().build_processor().fit(
+                SyntheticFeatures.normal()[:, :1]
+            )
+
+    def test_rejects_invalid_parameters(self) -> None:
+        with self.assertRaises(ValueError):
+            _ = PrincipalComponentParameters(n_components=0)
+        for explained_variance in (0.0, 1.0, float("nan")):
+            with (
+                self.subTest(explained_variance=explained_variance),
+                self.assertRaises(ValueError),
+            ):
+                _ = PrincipalComponentParameters(explained_variance=explained_variance)
+        with self.assertRaises(TypeError):
+            _ = PrincipalComponentParameters(n_components=cast(int, 2.0))
 
 
 class TestOneClassSVM(unittest.TestCase):

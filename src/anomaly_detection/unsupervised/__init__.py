@@ -4,6 +4,7 @@ from .local_outlier_factor import LocalOutlierFactorParameters
 from .mahalanobis import MahalanobisParameters
 from .one_class_svm import OneClassSVMParameters, SVMGamma, SVMKernel
 from .parameter import UnsupervisedParameters
+from .principal_component import PrincipalComponentParameters
 from .processor import UnsupervisedProcessor
 
 __all__ = [
@@ -12,6 +13,7 @@ __all__ = [
     "LocalOutlierFactorParameters",
     "MahalanobisParameters",
     "OneClassSVMParameters",
+    "PrincipalComponentParameters",
     "SVMGamma",
     "SVMKernel",
     "UnsupervisedParameters",

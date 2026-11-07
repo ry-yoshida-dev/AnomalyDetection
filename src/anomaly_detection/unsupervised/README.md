@@ -17,4 +17,5 @@ Methods that learn normality from unlabeled, mostly normal samples. `fit` sets t
 | [local_outlier_factor/](./local_outlier_factor/README.md) | Local outlier factor parameters and processor. |
 | [k_nearest_neighbors/](./k_nearest_neighbors/README.md) | k-nearest neighbors parameters and processor. |
 | [mahalanobis/](./mahalanobis/README.md) | Mahalanobis distance parameters and processor. |
+| [principal_component/](./principal_component/README.md) | Principal component reconstruction error parameters and processor. |
 | [sample_scoring/](./sample_scoring/README.md) | The processor shared by isolation forest and one-class SVM. |
