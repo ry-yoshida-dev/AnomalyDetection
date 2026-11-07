@@ -16,7 +16,7 @@ For module-level design notes, see [src/anomaly_detection/README.md](src/anomaly
 
 ## Installation
 
-Requires Python 3.12 or later; CI tests 3.12, 3.13, and 3.14.
+Requires Python 3.12 or later; CI tests 3.12, 3.13, 3.14, and 3.15.
 
 From the package root (the directory containing `pyproject.toml`):
 

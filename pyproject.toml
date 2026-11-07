@@ -18,14 +18,17 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Operating System :: OS Independent",
 ]
 dependencies = [
     "data-scaler @ git+https://github.com/ry-yoshida-dev/DataScaler.git@fff3316a8cb5ddc689a5194f7183688f787da7c7",
-    # NumPy publishes wheels for Python 3.14 from 2.3.2.
+    # Newer Python versions raise the floors to the first releases with wheels for them.
     "numpy>=2.2; python_version < '3.14'",
-    "numpy>=2.3.2; python_version >= '3.14'",
-    "scikit-learn>=1.8",
+    "numpy>=2.3.2; python_version == '3.14'",
+    "numpy>=2.5.2; python_version >= '3.15'",
+    "scikit-learn>=1.8; python_version < '3.15'",
+    "scikit-learn>=1.9.1; python_version >= '3.15'",
 ]
 
 [project.urls]
@@ -33,6 +36,8 @@ Homepage = "https://github.com/ry-yoshida-dev/AnomalyDetection"
 "Bug Tracker" = "https://github.com/ry-yoshida-dev/AnomalyDetection/issues"
 
 [tool.uv]
+# Earlier versions ignore a relative exclude-newer.
+required-version = ">=0.9.17"
 exclude-newer = "7 days"
 
 [tool.setuptools.packages.find]
@@ -57,7 +62,7 @@ filterwarnings = ["error"]
 dev = [
     "basedpyright",
     "mypy",
-    "pytest",
+    "pytest>=9",
     "ruff",
 ]
 

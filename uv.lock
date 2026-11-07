@@ -8,7 +8,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-10-30T23:31:02.379199Z"
+exclude-newer = "2026-10-31T01:17:26.851806Z"
 exclude-newer-span = "P7D"
 
 [[package]]
@@ -33,15 +33,17 @@ dev = [
 requires-dist = [
     { name = "data-scaler", git = "https://github.com/ry-yoshida-dev/DataScaler.git?rev=fff3316a8cb5ddc689a5194f7183688f787da7c7" },
     { name = "numpy", marker = "python_full_version < '3.14'", specifier = ">=2.2" },
-    { name = "numpy", marker = "python_full_version >= '3.14'", specifier = ">=2.3.2" },
-    { name = "scikit-learn", specifier = ">=1.8" },
+    { name = "numpy", marker = "python_full_version == '3.14.*'", specifier = ">=2.3.2" },
+    { name = "numpy", marker = "python_full_version >= '3.15'", specifier = ">=2.5.2" },
+    { name = "scikit-learn", marker = "python_full_version < '3.15'", specifier = ">=1.8" },
+    { name = "scikit-learn", marker = "python_full_version >= '3.15'", specifier = ">=1.9.1" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "basedpyright" },
     { name = "mypy" },
-    { name = "pytest" },
+    { name = "pytest", specifier = ">=9" },
     { name = "ruff" },
 ]
 
