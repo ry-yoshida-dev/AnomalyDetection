@@ -12,6 +12,7 @@ from anomaly_detection import FeatureScaling, NeighborsMetric
 from anomaly_detection.unsupervised import (
     CovarianceStructure,
     EmpiricalCumulativeDistributionParameters,
+    EnsembleParameters,
     GaussianMixtureParameters,
     IsolationForestParameters,
     KNearestNeighborsParameters,
@@ -264,6 +265,62 @@ class TestEmpiricalCumulativeDistribution(unittest.TestCase):
         processor.fit(X)
         self.assertTrue(processor.predict(np.array([[20.0, 20.0]]))[0])
         self.assertFalse(processor.predict(np.array([[1.0, 1.0]]))[0])
+
+
+class TestEnsemble(unittest.TestCase):
+    MEMBERS: tuple[UnsupervisedParameters, ...] = (
+        IsolationForestParameters(),
+        KNearestNeighborsParameters(),
+        MahalanobisParameters(),
+    )
+
+    def test_detects_far_samples_and_follows_contamination(self) -> None:
+        processor: UnsupervisedProcessor = EnsembleParameters(
+            members=self.MEMBERS, contamination=0.1
+        ).build_processor()
+        processor.fit(SyntheticFeatures.normal(n_samples=1000))
+        self.assertTrue(processor.predict(SyntheticFeatures.anomalous()).all())
+        unseen: NDArray[np.float64] = SyntheticFeatures.normal(n_samples=2000, seed=5)
+        self.assertAlmostEqual(float(processor.predict(unseen).mean()), 0.1, delta=0.04)
+
+    def test_scores_are_averaged_percentiles(self) -> None:
+        processor: UnsupervisedProcessor = EnsembleParameters(
+            members=self.MEMBERS
+        ).build_processor()
+        processor.fit(SyntheticFeatures.normal())
+        scores: NDArray[np.floating] = processor.score(
+            np.concatenate(
+                [SyntheticFeatures.normal(seed=3), SyntheticFeatures.anomalous()]
+            )
+        )
+        self.assertTrue(((scores >= 0.0) & (scores <= 1.0)).all())
+        np.testing.assert_allclose(scores[-10:], 1.0)
+
+    def test_failed_member_fit_leaves_the_ensemble_unfitted(self) -> None:
+        processor: UnsupervisedProcessor = EnsembleParameters(
+            members=(KNearestNeighborsParameters(n_neighbors=5),)
+        ).build_processor()
+        with self.assertRaises(ValueError):
+            processor.fit(SyntheticFeatures.normal(n_samples=3))
+        with self.assertRaises(NotFittedError):
+            _ = processor.score(SyntheticFeatures.normal())
+
+    def test_rejects_invalid_members(self) -> None:
+        with self.assertRaises(ValueError):
+            _ = EnsembleParameters(members=())
+        with self.assertRaises(TypeError):
+            _ = EnsembleParameters(
+                members=cast(
+                    tuple[UnsupervisedParameters, ...],
+                    cast(object, [IsolationForestParameters()]),
+                )
+            )
+        with self.assertRaises(TypeError):
+            _ = EnsembleParameters(
+                members=cast(
+                    tuple[UnsupervisedParameters, ...], cast(object, ("isolation",))
+                )
+            )
 
 
 class TestGaussianMixture(unittest.TestCase):

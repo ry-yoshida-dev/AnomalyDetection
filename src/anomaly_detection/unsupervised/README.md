@@ -20,4 +20,5 @@ Methods that learn normality from unlabeled, mostly normal samples. `fit` sets t
 | [empirical_cumulative_distribution/](./empirical_cumulative_distribution/README.md) | ECOD parameters and processor, scoring by the tail probabilities of each feature. |
 | [gaussian_mixture/](./gaussian_mixture/README.md) | Gaussian mixture likelihood parameters and options. |
 | [principal_component/](./principal_component/README.md) | Principal component reconstruction error parameters and processor. |
+| [ensemble/](./ensemble/README.md) | Parameters and processor averaging the score percentiles of several methods. |
 | [sample_scoring/](./sample_scoring/README.md) | The processor shared by isolation forest, one-class SVM, and Gaussian mixture. |

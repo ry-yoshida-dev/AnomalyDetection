@@ -55,16 +55,21 @@ class UnsupervisedProcessor(AnomalyProcessor, ABC):
             values cannot be represented, the samples are all identical, or there
             are too few samples for the method.
         """
-        self._scaler = None
         self._threshold = None
+        training_scores: FloatArray = self._fit_with_training_scores(X)
+        self._threshold = float(np.quantile(training_scores, 1.0 - self.contamination))
+
+    def _fit_with_training_scores(self, X: NumericArray) -> FloatArray:
+        """Fit the scaler and scorer, and return training scores that leave each sample's influence out."""
+        self._scaler = None
         scaler: Scaler = self.scaling.build_scaler()
         scaled: FloatArray = scaler.fit_transform(X)
         # Identical samples carry no spread to learn, and some methods would then never flag.
         if not np.ptp(scaled, axis=0).any():
             raise ValueError("Training samples must not all be identical")
         training_scores: FloatArray = self._fit_scorer(scaled)
-        self._threshold = float(np.quantile(training_scores, 1.0 - self.contamination))
         self._scaler = scaler
+        return training_scores
 
     @property
     def threshold(self) -> float:

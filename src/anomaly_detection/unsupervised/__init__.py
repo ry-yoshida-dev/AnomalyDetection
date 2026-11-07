@@ -1,4 +1,5 @@
 from .empirical_cumulative_distribution import EmpiricalCumulativeDistributionParameters
+from .ensemble import EnsembleParameters
 from .gaussian_mixture import CovarianceStructure, GaussianMixtureParameters
 from .isolation_forest import IsolationForestParameters
 from .k_nearest_neighbors import KNearestNeighborsParameters
@@ -12,6 +13,7 @@ from .processor import UnsupervisedProcessor
 __all__ = [
     "CovarianceStructure",
     "EmpiricalCumulativeDistributionParameters",
+    "EnsembleParameters",
     "GaussianMixtureParameters",
     "IsolationForestParameters",
     "KNearestNeighborsParameters",

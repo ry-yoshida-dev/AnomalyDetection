@@ -9,7 +9,7 @@ Choose the package by what is available before detection:
 | Package | Available beforehand | Preparation | Methods |
 | --- | --- | --- | --- |
 | `anomaly_detection.supervised` | Normal and anomalous samples | `fit(X, y)` | Logistic regression, random forest, histogram gradient boosting, or any classifier with `fit` and `predict_proba` |
-| `anomaly_detection.unsupervised` | Unlabeled, mostly normal samples | `fit(X)` | Isolation forest, local outlier factor, one-class SVM, Mahalanobis distance, k-nearest neighbors, principal component reconstruction error, ECOD, Gaussian mixture |
+| `anomaly_detection.unsupervised` | Unlabeled, mostly normal samples | `fit(X)` | Isolation forest, local outlier factor, one-class SVM, Mahalanobis distance, k-nearest neighbors, principal component reconstruction error, ECOD, Gaussian mixture, and an ensemble of them |
 | `anomaly_detection.zero_shot` | No training samples | None | Prototype similarity, mutual scoring |
 
 For module-level design notes, see [src/anomaly_detection/README.md](src/anomaly_detection/README.md).
@@ -41,6 +41,26 @@ processor = IsolationForestParameters(contamination=0.01).build_processor()
 processor.fit(X_train)
 is_anomalous = processor.predict(X_test)
 scores = processor.score(X_test)
+```
+
+Combine several methods, so that none has to be chosen:
+
+```python
+from anomaly_detection.unsupervised import (
+    EnsembleParameters,
+    IsolationForestParameters,
+    KNearestNeighborsParameters,
+    MahalanobisParameters,
+)
+
+processor = EnsembleParameters(
+    members=(
+        IsolationForestParameters(),
+        KNearestNeighborsParameters(),
+        MahalanobisParameters(),
+    ),
+).build_processor()
+processor.fit(X_train)
 ```
 
 Learn from labeled samples, where `True` means anomalous:
@@ -93,6 +113,7 @@ is_anomalous = MutualScoringParameters().build_processor().predict(X_batch)
 - The threshold is set from training scores that each leave out the sample's own influence, which keeps it valid for unseen samples. Local outlier factor and k-nearest neighbors exclude each sample from its own neighbors; isolation forest, one-class SVM, Mahalanobis distance, Gaussian mixture, and principal component reconstruction error score each sample with a model fitted on the other four fifths of the samples (5-fold cross-fitting), so their `fit` costs about six fits. Scoring a training sample with `score` still uses the model fitted on all samples, so such scores are lower than those of comparable unseen samples.
 - ECOD needs no hyperparameters, so it is a good first method to try. It treats features independently, so it misses anomalies that only break correlations between features, and its tail probabilities leave each training sample out instead of cross-fitting.
 - Principal component reconstruction error flags only deviations outside the directions along which training samples vary, which suits embeddings; a sample far away along those directions stays normal. It always leaves at least one direction out, so features need at least two dimensions.
+- An ensemble averages each member's percentile among its own out-of-fold training scores, so members on different score scales weigh equally. Percentiles stop at 1 beyond every training score, so the ensemble ranks such samples as ties.
 - Unsupervised `fit` rejects training samples that are all identical, because they carry no spread to learn from.
 - Cosine distance in k-nearest neighbors and local outlier factor needs a scaling that keeps the origin (`NONE`, `MAX_ABS`, or `UNIT_NORM`), because centering turns typical samples into zero vectors, which have no direction.
 - Supervised scores are probabilities of the anomalous class. Classes are balanced by default, because anomalies are usually rare. Histogram gradient boosting trains without early stopping, whose validation split would hold back some of the few anomalies.
