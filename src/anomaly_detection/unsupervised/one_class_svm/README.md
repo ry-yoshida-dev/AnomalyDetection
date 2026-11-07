@@ -2,7 +2,7 @@
 
 ## Overview
 
-One-class SVM, scored through `SampleScoringProcessor`, which scores the training samples out of fold. Scores are normalized so that models fitted on different numbers of samples share one scale.
+One-class SVM, scored through `SampleScoringProcessor`, with scores that share one scale across training set sizes.
 
 ## Components
 

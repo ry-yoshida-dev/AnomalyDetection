@@ -51,7 +51,3 @@ processor = PrototypeSimilarityParameters(
 ).build_processor()
 is_anomalous = processor.predict(image_embeddings)
 ```
-
-## License
-
-Released under the [MIT License](LICENSE).

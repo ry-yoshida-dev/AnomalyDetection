@@ -9,4 +9,4 @@ Scores each sample against the other samples of the same batch, assuming anomali
 | Component | Description |
 |-----------|-------------|
 | [parameter.py](./parameter.py) | `MutualScoringParameters`, which validates the settings and builds the processor. |
-| [processor.py](./processor.py) | `MutualScoringProcessor`, which averages distances to the nearest other samples and thresholds them by the median absolute deviation, or the mean absolute deviation when the former is 0. |
+| [processor.py](./processor.py) | `MutualScoringProcessor`, which scores samples by their distances to the nearest other samples. |

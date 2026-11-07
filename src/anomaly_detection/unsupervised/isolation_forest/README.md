@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isolation forest, scored through `SampleScoringProcessor`, which scores the training samples out of fold.
+Isolation forest, scored through `SampleScoringProcessor`.
 
 ## Components
 

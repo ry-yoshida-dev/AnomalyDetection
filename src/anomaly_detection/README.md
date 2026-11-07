@@ -9,10 +9,10 @@ Normal or anomalous decisions on feature vectors. Each family of methods lives i
 | Component | Description |
 |-----------|-------------|
 | [types.py](./types.py) | Type aliases for features, scores, and decisions. |
-| [feature_validator.py](./feature_validator.py) | `FeatureValidator`, runtime checks of feature matrices, as strict as those of DataScaler. |
+| [feature_validator.py](./feature_validator.py) | `FeatureValidator`, runtime checks of feature matrices. |
 | [parameter_validator.py](./parameter_validator.py) | `ParameterValidator`, runtime checks of parameter types, job counts, and seeds. |
 | [neighbors_metric.py](./neighbors_metric.py) | `NeighborsMetric` enum of distance metrics. |
-| [processor.py](./processor.py) | `AnomalyProcessor`, the abstract base class implementing `score` and `predict`. Families that scale features leave the feature checks to the scaler. |
+| [processor.py](./processor.py) | `AnomalyProcessor`, the abstract base class implementing `score` and `predict`. |
 | [parameter.py](./parameter.py) | `AnomalyParameters`, the abstract base class of parameters that build a processor. |
 | [supervised/](./supervised/README.md) | Methods that learn from normal and anomalous samples. |
 | [unsupervised/](./unsupervised/README.md) | Methods that learn from unlabeled, mostly normal samples. |
