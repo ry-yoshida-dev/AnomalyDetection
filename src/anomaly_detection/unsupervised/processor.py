@@ -21,7 +21,10 @@ class UnsupervisedProcessor(AnomalyProcessor, ABC):
     contamination fraction above it, so all methods share one meaning of
     contamination regardless of their score scale. Each training sample is
     scored without its own influence, so the threshold also holds for unseen
-    samples.
+    samples. Methods that cannot leave a sample out directly fit once per fold
+    and once on all samples, so their fit costs about six fits. ``score`` uses
+    the model fitted on all samples, so it scores training samples lower than
+    comparable unseen samples.
 
     Attributes
     ----------

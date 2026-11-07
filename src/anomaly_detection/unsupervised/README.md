@@ -2,7 +2,7 @@
 
 ## Overview
 
-Methods that learn normality from unlabeled, mostly normal samples. `fit` sets the threshold from training scores that each leave out the sample's own influence, so `contamination` means the same for every method and holds for unseen samples.
+Methods that learn normality from unlabeled, mostly normal samples.
 
 ## Components
 
