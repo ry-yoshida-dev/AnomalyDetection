@@ -10,7 +10,9 @@ from sklearn.exceptions import NotFittedError
 
 from anomaly_detection import FeatureScaling, NeighborsMetric
 from anomaly_detection.unsupervised import (
+    CovarianceStructure,
     EmpiricalCumulativeDistributionParameters,
+    GaussianMixtureParameters,
     IsolationForestParameters,
     KNearestNeighborsParameters,
     LocalOutlierFactorParameters,
@@ -33,6 +35,7 @@ DISTANCE_METHODS: tuple[UnsupervisedParameters, ...] = (
     MahalanobisParameters(),
     KNearestNeighborsParameters(),
     EmpiricalCumulativeDistributionParameters(),
+    GaussianMixtureParameters(),
 )
 ALL_METHODS: tuple[UnsupervisedParameters, ...] = (
     *DISTANCE_METHODS,
@@ -261,6 +264,51 @@ class TestEmpiricalCumulativeDistribution(unittest.TestCase):
         processor.fit(X)
         self.assertTrue(processor.predict(np.array([[20.0, 20.0]]))[0])
         self.assertFalse(processor.predict(np.array([[1.0, 1.0]]))[0])
+
+
+class TestGaussianMixture(unittest.TestCase):
+    def test_flags_samples_between_clusters_of_normal_samples(self) -> None:
+        X: NDArray[np.float64] = np.concatenate(
+            [
+                SyntheticFeatures.normal(n_samples=300) - 6.0,
+                SyntheticFeatures.normal(n_samples=300, seed=2) + 6.0,
+            ]
+        )
+        processor: UnsupervisedProcessor = GaussianMixtureParameters(
+            contamination=0.05, scaling=FeatureScaling.NONE
+        ).build_processor()
+        processor.fit(X)
+        self.assertTrue(processor.predict(np.zeros((1, 4)))[0])
+        self.assertFalse(processor.predict(np.full((1, 4), 6.0))[0])
+
+    def test_every_covariance_structure_fits(self) -> None:
+        X: NDArray[np.float64] = SyntheticFeatures.normal()
+        for covariance in CovarianceStructure:
+            with self.subTest(covariance=covariance):
+                processor: UnsupervisedProcessor = GaussianMixtureParameters(
+                    covariance=covariance
+                ).build_processor()
+                processor.fit(X)
+                self.assertTrue(processor.predict(SyntheticFeatures.anomalous()).all())
+
+    def test_rejects_invalid_parameters(self) -> None:
+        with self.assertRaises(ValueError):
+            _ = GaussianMixtureParameters(n_components=0)
+        with self.assertRaises(ValueError):
+            _ = GaussianMixtureParameters(n_init=0)
+        with self.assertRaises(ValueError):
+            _ = GaussianMixtureParameters(random_state=-1)
+        with self.assertRaises(TypeError):
+            _ = GaussianMixtureParameters(
+                covariance=cast(CovarianceStructure, cast(object, "full"))
+            )
+
+    def test_rejects_more_components_than_samples(self) -> None:
+        processor: UnsupervisedProcessor = GaussianMixtureParameters(
+            n_components=10
+        ).build_processor()
+        with self.assertRaises(ValueError):
+            processor.fit(SyntheticFeatures.normal(n_samples=10))
 
 
 class TestPrincipalComponent(unittest.TestCase):

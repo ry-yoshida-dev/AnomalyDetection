@@ -9,7 +9,7 @@ Choose the package by what is available before detection:
 | Package | Available beforehand | Preparation | Methods |
 | --- | --- | --- | --- |
 | `anomaly_detection.supervised` | Normal and anomalous samples | `fit(X, y)` | Logistic regression, random forest, histogram gradient boosting, or any classifier with `fit` and `predict_proba` |
-| `anomaly_detection.unsupervised` | Unlabeled, mostly normal samples | `fit(X)` | Isolation forest, local outlier factor, one-class SVM, Mahalanobis distance, k-nearest neighbors, principal component reconstruction error, ECOD |
+| `anomaly_detection.unsupervised` | Unlabeled, mostly normal samples | `fit(X)` | Isolation forest, local outlier factor, one-class SVM, Mahalanobis distance, k-nearest neighbors, principal component reconstruction error, ECOD, Gaussian mixture |
 | `anomaly_detection.zero_shot` | No training samples | None | Prototype similarity, mutual scoring |
 
 For module-level design notes, see [src/anomaly_detection/README.md](src/anomaly_detection/README.md).
@@ -90,7 +90,7 @@ is_anomalous = MutualScoringParameters().build_processor().predict(X_batch)
 
 - A sample is anomalous when its score is strictly above the threshold.
 - Unsupervised thresholds are the quantile of the training scores that leaves `contamination` above it, for every method. With purely normal training samples, `contamination` approximates the false positive rate on unseen samples.
-- The threshold is set from training scores that each leave out the sample's own influence, which keeps it valid for unseen samples. Local outlier factor and k-nearest neighbors exclude each sample from its own neighbors; isolation forest, one-class SVM, Mahalanobis distance, and principal component reconstruction error score each sample with a model fitted on the other four fifths of the samples (5-fold cross-fitting), so their `fit` costs about six fits. Scoring a training sample with `score` still uses the model fitted on all samples, so such scores are lower than those of comparable unseen samples.
+- The threshold is set from training scores that each leave out the sample's own influence, which keeps it valid for unseen samples. Local outlier factor and k-nearest neighbors exclude each sample from its own neighbors; isolation forest, one-class SVM, Mahalanobis distance, Gaussian mixture, and principal component reconstruction error score each sample with a model fitted on the other four fifths of the samples (5-fold cross-fitting), so their `fit` costs about six fits. Scoring a training sample with `score` still uses the model fitted on all samples, so such scores are lower than those of comparable unseen samples.
 - ECOD needs no hyperparameters, so it is a good first method to try. It treats features independently, so it misses anomalies that only break correlations between features, and its tail probabilities leave each training sample out instead of cross-fitting.
 - Principal component reconstruction error flags only deviations outside the directions along which training samples vary, which suits embeddings; a sample far away along those directions stays normal. It always leaves at least one direction out, so features need at least two dimensions.
 - Unsupervised `fit` rejects training samples that are all identical, because they carry no spread to learn from.
