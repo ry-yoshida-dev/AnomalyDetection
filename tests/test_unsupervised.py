@@ -14,6 +14,8 @@ from anomaly_detection.unsupervised import (
     LocalOutlierFactorParameters,
     MahalanobisParameters,
     OneClassSVMParameters,
+    SVMGamma,
+    SVMKernel,
     UnsupervisedParameters,
     UnsupervisedProcessor,
 )
@@ -165,3 +167,116 @@ class TestParameterValidation(unittest.TestCase):
         for gamma in (0.0, float("nan")):
             with self.subTest(gamma=gamma), self.assertRaises(ValueError):
                 _ = OneClassSVMParameters(gamma=gamma)
+
+
+class TestOutOfFoldThreshold(unittest.TestCase):
+    def test_false_positive_rate_holds_for_small_training_sets(self) -> None:
+        # Methods scoring their own training samples would flag far more here.
+        for parameters in ALL_METHODS:
+            parameters = type(parameters)(contamination=0.1)
+            with self.subTest(method=type(parameters).__name__):
+                rates: list[float] = []
+                for seed in range(5):
+                    processor: UnsupervisedProcessor = parameters.build_processor()
+                    processor.fit(SyntheticFeatures.normal(n_samples=100, seed=seed))
+                    unseen: NDArray[np.float64] = SyntheticFeatures.normal(
+                        n_samples=2000, seed=100 + seed
+                    )
+                    rates.append(float(processor.predict(unseen).mean()))
+                self.assertAlmostEqual(float(np.mean(rates)), 0.1, delta=0.05)
+
+    def test_rejects_identical_training_samples(self) -> None:
+        for parameters in ALL_METHODS:
+            with self.subTest(method=type(parameters).__name__):
+                processor: UnsupervisedProcessor = parameters.build_processor()
+                with self.assertRaises(ValueError):
+                    processor.fit(np.ones((50, 4)))
+                with self.assertRaises(ValueError):
+                    processor.fit(np.ones((1, 4)))
+
+
+class TestCosineScaling(unittest.TestCase):
+    def test_rejects_scalings_that_move_the_origin(self) -> None:
+        for parameters_type in (
+            KNearestNeighborsParameters,
+            LocalOutlierFactorParameters,
+        ):
+            for scaling in (
+                FeatureScaling.STANDARD,
+                FeatureScaling.MIN_MAX,
+                FeatureScaling.ROBUST,
+            ):
+                with (
+                    self.subTest(method=parameters_type.__name__, scaling=scaling),
+                    self.assertRaises(ValueError),
+                ):
+                    _ = parameters_type(metric=NeighborsMetric.COSINE, scaling=scaling)
+
+    def test_accepts_scalings_that_keep_the_origin(self) -> None:
+        for scaling in (
+            FeatureScaling.NONE,
+            FeatureScaling.MAX_ABS,
+            FeatureScaling.UNIT_NORM,
+        ):
+            with self.subTest(scaling=scaling):
+                _ = KNearestNeighborsParameters(
+                    metric=NeighborsMetric.COSINE, scaling=scaling
+                )
+
+
+class TestOneClassSVM(unittest.TestCase):
+    def test_every_kernel_and_gamma_rule_fits(self) -> None:
+        X: NDArray[np.float64] = SyntheticFeatures.normal()
+        for kernel in SVMKernel:
+            for gamma in SVMGamma:
+                with self.subTest(kernel=kernel, gamma=gamma):
+                    processor: UnsupervisedProcessor = OneClassSVMParameters(
+                        kernel=kernel, gamma=gamma
+                    ).build_processor()
+                    processor.fit(X)
+                    self.assertTrue(np.isfinite(processor.score(X)).all())
+
+    def test_scores_do_not_depend_on_the_number_of_training_samples(self) -> None:
+        X: NDArray[np.float64] = SyntheticFeatures.normal(n_samples=1000)
+        small: UnsupervisedProcessor = OneClassSVMParameters(
+            scaling=FeatureScaling.NONE
+        ).build_processor()
+        large: UnsupervisedProcessor = OneClassSVMParameters(
+            scaling=FeatureScaling.NONE
+        ).build_processor()
+        small.fit(X[:500])
+        large.fit(X)
+        probe: NDArray[np.float64] = np.zeros((1, 4))
+        np.testing.assert_allclose(small.score(probe), large.score(probe), atol=0.05)
+
+
+class TestParameterTypesAndRanges(unittest.TestCase):
+    def test_rejects_values_that_would_fail_at_fit(self) -> None:
+        with self.assertRaises(ValueError):
+            _ = IsolationForestParameters(n_jobs=0)
+        with self.assertRaises(ValueError):
+            _ = IsolationForestParameters(random_state=-1)
+        with self.assertRaises(ValueError):
+            _ = IsolationForestParameters(random_state=2**32)
+        with self.assertRaises(ValueError):
+            _ = KNearestNeighborsParameters(n_jobs=0)
+        with self.assertRaises(ValueError):
+            _ = LocalOutlierFactorParameters(n_jobs=0)
+        with self.assertRaises(ValueError):
+            _ = OneClassSVMParameters(gamma=float("inf"))
+
+    def test_rejects_values_of_the_wrong_type(self) -> None:
+        with self.assertRaises(TypeError):
+            _ = OneClassSVMParameters(gamma=cast(float, True))
+        with self.assertRaises(TypeError):
+            _ = OneClassSVMParameters(kernel=cast(SVMKernel, cast(object, "rbf")))
+        with self.assertRaises(TypeError):
+            _ = KNearestNeighborsParameters(
+                metric=cast(NeighborsMetric, cast(object, "cosine"))
+            )
+        with self.assertRaises(TypeError):
+            _ = MahalanobisParameters(
+                scaling=cast(FeatureScaling, cast(object, "standard"))
+            )
+        with self.assertRaises(TypeError):
+            _ = MahalanobisParameters(contamination=cast(float, cast(object, "0.1")))

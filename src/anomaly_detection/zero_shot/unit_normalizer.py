@@ -23,14 +23,17 @@ class UnitNormalizer:
         Returns
         -------
         FloatArray
-            The unit vectors with the same shape.
+            The unit vectors with the same shape, in float64.
 
         Raises
         ------
         ValueError
             If a row has zero length and therefore no direction.
         """
-        norms: FloatArray = np.sqrt(np.square(X).sum(axis=1, keepdims=True))
-        if not norms.all():
+        values: FloatArray = np.asarray(X, dtype=np.float64)
+        # Dividing by the largest magnitude first keeps the squares from overflowing or underflowing.
+        peaks: FloatArray = np.abs(values).max(axis=1, keepdims=True)
+        if not peaks.all():
             raise ValueError("Vectors must not have zero length")
-        return X / norms
+        bounded: FloatArray = values / peaks
+        return bounded / np.linalg.norm(bounded, axis=1, keepdims=True)

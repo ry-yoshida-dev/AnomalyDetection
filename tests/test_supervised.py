@@ -148,3 +148,52 @@ class TestParameterValidation(unittest.TestCase):
             _ = HistGradientBoostingParameters(learning_rate=float("nan"))
         with self.assertRaises(TypeError):
             _ = HistGradientBoostingParameters(max_iter=cast(int, 1.5))
+
+    def test_rejects_values_that_would_fail_at_fit(self) -> None:
+        with self.assertRaises(ValueError):
+            _ = RandomForestParameters(n_jobs=0)
+        with self.assertRaises(ValueError):
+            _ = RandomForestParameters(random_state=-1)
+        with self.assertRaises(ValueError):
+            _ = HistGradientBoostingParameters(random_state=2**40)
+        with self.assertRaises(ValueError):
+            _ = HistGradientBoostingParameters(learning_rate=float("inf"))
+        with self.assertRaises(ValueError):
+            _ = HistGradientBoostingParameters(min_samples_leaf=0)
+        with self.assertRaises(ValueError):
+            _ = HistGradientBoostingParameters(max_depth=0)
+
+    def test_rejects_values_of_the_wrong_type(self) -> None:
+        with self.assertRaises(TypeError):
+            _ = RandomForestParameters(is_class_balanced=cast(bool, cast(object, "no")))
+        with self.assertRaises(TypeError):
+            _ = LogisticRegressionParameters(
+                scaling=cast(FeatureScaling, cast(object, "standard"))
+            )
+        with self.assertRaises(TypeError):
+            _ = LogisticRegressionParameters(C=cast(float, cast(object, "1.0")))
+        with self.assertRaises(TypeError):
+            _ = RandomForestParameters(decision_threshold=cast(float, True))
+
+
+class TestLabels(unittest.TestCase):
+    def test_rejects_labels_that_are_not_plain_arrays(self) -> None:
+        processor: SupervisedProcessor = RandomForestParameters().build_processor()
+        with self.assertRaises(TypeError):
+            processor.fit(X, cast(BoolArray, Y.tolist()))
+        with self.assertRaises(TypeError):
+            processor.fit(X, np.ma.masked_array(Y))
+
+
+class TestHistGradientBoosting(unittest.TestCase):
+    def test_trains_on_every_sample_beyond_the_early_stopping_size(self) -> None:
+        # Early stopping would hold out a stratified split, which a single anomaly cannot fill.
+        features: NDArray[np.float64] = SyntheticFeatures.normal(n_samples=10_001)
+        labels: NDArray[np.bool_] = np.zeros(10_001, dtype=np.bool_)
+        features[0] += 20.0
+        labels[0] = True
+        processor: SupervisedProcessor = HistGradientBoostingParameters(
+            max_iter=10
+        ).build_processor()
+        processor.fit(features, labels)
+        self.assertEqual(processor.score(features).shape, (10_001,))

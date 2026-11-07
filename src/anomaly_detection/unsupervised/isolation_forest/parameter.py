@@ -23,7 +23,14 @@ class IsolationForestParameters(UnsupervisedParameters):
     n_jobs : int | None
         Number of parallel jobs.
     random_state : int | None
-        Seed for subsampling and splits.
+        Seed for subsampling and splits, in [0, 2**32 - 1].
+
+    Raises
+    ------
+    TypeError
+        If a count or the seed is not an integer.
+    ValueError
+        If a count is not positive, n_jobs is 0, or the seed is out of range.
     """
 
     n_estimators: int = 100
@@ -39,6 +46,8 @@ class IsolationForestParameters(UnsupervisedParameters):
             n_jobs=self.n_jobs,
             random_state=self.random_state,
         )
+        ParameterValidator.require_job_count(self.n_jobs)
+        ParameterValidator.require_random_state(self.random_state)
         if self.n_estimators <= 0:
             raise ValueError("n_estimators must be greater than 0")
         if self.max_samples is not None and self.max_samples <= 0:

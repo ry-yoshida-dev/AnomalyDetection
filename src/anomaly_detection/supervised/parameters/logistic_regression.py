@@ -17,11 +17,19 @@ class LogisticRegressionParameters(SupervisedParameters):
     Attributes
     ----------
     C : float
-        Inverse regularization strength.
+        Inverse regularization strength, in (0, inf]; inf turns regularization off.
     max_iter : int
         Maximum number of solver iterations.
     scaling : FeatureScaling
         Feature scaling; regularization and solvers depend on feature scale.
+
+    Raises
+    ------
+    TypeError
+        If C is not a real number, max_iter is not an integer, or scaling is
+        not a FeatureScaling.
+    ValueError
+        If C or max_iter is not positive.
     """
 
     C: float = 1.0
@@ -31,6 +39,8 @@ class LogisticRegressionParameters(SupervisedParameters):
     def __post_init__(self) -> None:
         super().__post_init__()
         ParameterValidator.require_integers(max_iter=self.max_iter)
+        ParameterValidator.require_real_numbers(C=self.C)
+        ParameterValidator.require_instances(FeatureScaling, scaling=self.scaling)
         if not self.C > 0.0:
             raise ValueError(f"C must be greater than 0, got {self.C}")
         if self.max_iter <= 0:

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import override
 
 from ..parameter import AnomalyParameters
+from ..parameter_validator import ParameterValidator
 from .processor import SupervisedProcessor
 
 
@@ -23,6 +24,8 @@ class SupervisedParameters(AnomalyParameters, ABC):
 
     Raises
     ------
+    TypeError
+        If the threshold is not a real number or is_class_balanced is not a bool.
     ValueError
         If the threshold is outside (0, 1).
     """
@@ -31,6 +34,12 @@ class SupervisedParameters(AnomalyParameters, ABC):
     is_class_balanced: bool = True
 
     def __post_init__(self) -> None:
+        ParameterValidator.require_real_numbers(
+            decision_threshold=self.decision_threshold
+        )
+        ParameterValidator.require_instances(
+            bool, is_class_balanced=self.is_class_balanced
+        )
         if not 0.0 < self.decision_threshold < 1.0:
             raise ValueError(
                 f"decision_threshold must be in (0, 1), got {self.decision_threshold}"

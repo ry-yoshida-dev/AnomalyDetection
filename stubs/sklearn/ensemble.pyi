@@ -37,6 +37,7 @@ class HistGradientBoostingClassifier:
         learning_rate: float = 0.1,
         max_depth: int | None = None,
         min_samples_leaf: int = 20,
+        early_stopping: bool | Literal["auto"] = "auto",
         class_weight: Literal["balanced"] | None = None,
         random_state: int | None = None,
     ) -> None: ...

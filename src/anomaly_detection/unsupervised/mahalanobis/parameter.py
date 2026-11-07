@@ -4,6 +4,7 @@ from typing import override
 from data_scaler import FeatureScaling
 from sklearn.covariance import LedoitWolf
 
+from ...parameter_validator import ParameterValidator
 from ..parameter import UnsupervisedParameters
 from .processor import MahalanobisProcessor
 
@@ -20,9 +21,18 @@ class MahalanobisParameters(UnsupervisedParameters):
     ----------
     scaling : FeatureScaling
         Feature scaling; shrinkage depends on feature scale.
+
+    Raises
+    ------
+    TypeError
+        If scaling is not a FeatureScaling.
     """
 
     scaling: FeatureScaling = FeatureScaling.STANDARD
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        ParameterValidator.require_instances(FeatureScaling, scaling=self.scaling)
 
     @override
     def build_processor(self) -> MahalanobisProcessor:

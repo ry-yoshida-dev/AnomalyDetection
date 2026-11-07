@@ -1,15 +1,21 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
-from typing import override
+from typing import Final, override
 
 import numpy as np
 
 from ...feature_validator import FeatureValidator
 from ...parameter import AnomalyParameters
+from ...parameter_validator import ParameterValidator
 from ...types import FloatArray, NumericArray
 from ..unit_normalizer import UnitNormalizer
 from .processor import PrototypeSimilarityProcessor
+
+# Directions closer than this, in the length of their unit-vector difference or
+# mean, are lost in rounding noise.
+DIRECTION_TOLERANCE: Final[float] = 1e-6
 
 
 @dataclass(frozen=True, eq=False)
@@ -28,17 +34,20 @@ class PrototypeSimilarityParameters(AnomalyParameters):
     anomalous_prototypes : NumericArray
         Embeddings describing anomalous samples, with shape (n_anomalous, n_features).
     temperature : float
-        The softmax temperature; lower values make the scores more decisive.
+        The softmax temperature, positive and finite; lower values make the
+        scores more decisive.
     decision_threshold : float
         The anomaly probability above which a sample is anomalous, in (0, 1).
 
     Raises
     ------
     TypeError
-        If the prototypes are not numeric.
+        If the prototypes are not numeric, or the temperature or threshold is not
+        a real number.
     ValueError
-        If the prototypes are invalid or differ in dimension, or the temperature
-        or threshold is out of range.
+        If the prototypes are invalid, differ in dimension, cancel out, or do not
+        separate normal from anomalous, or the temperature or threshold is out of
+        range.
     """
 
     normal_prototypes: NumericArray
@@ -54,9 +63,12 @@ class PrototypeSimilarityParameters(AnomalyParameters):
                 "Prototypes must have the same number of features, got "
                 + f"{self.normal_prototypes.shape[1]} and {self.anomalous_prototypes.shape[1]}"
             )
-        if not self.temperature > 0.0:
+        ParameterValidator.require_real_numbers(
+            temperature=self.temperature, decision_threshold=self.decision_threshold
+        )
+        if not 0.0 < self.temperature < math.inf:
             raise ValueError(
-                f"temperature must be greater than 0, got {self.temperature}"
+                f"temperature must be positive and finite, got {self.temperature}"
             )
         if not 0.0 < self.decision_threshold < 1.0:
             raise ValueError(
@@ -77,11 +89,18 @@ class PrototypeSimilarityParameters(AnomalyParameters):
         Raises
         ------
         ValueError
-            If a prototype has zero length, or the prototypes of one kind cancel out.
+            If a prototype has zero length, the prototypes of one kind cancel out,
+            or the normal and anomalous prototypes point the same way.
         """
+        normal_prototype: FloatArray = self._merge(self.normal_prototypes)
+        anomalous_prototype: FloatArray = self._merge(self.anomalous_prototypes)
+        if np.linalg.norm(anomalous_prototype - normal_prototype) < DIRECTION_TOLERANCE:
+            raise ValueError(
+                "Normal and anomalous prototypes must point in different directions"
+            )
         return PrototypeSimilarityProcessor(
-            normal_prototype=self._merge(self.normal_prototypes),
-            anomalous_prototype=self._merge(self.anomalous_prototypes),
+            normal_prototype=normal_prototype,
+            anomalous_prototype=anomalous_prototype,
             temperature=self.temperature,
             decision_threshold=self.decision_threshold,
         )
@@ -91,4 +110,6 @@ class PrototypeSimilarityParameters(AnomalyParameters):
         mean: FloatArray = np.mean(
             UnitNormalizer.normalize(prototypes), axis=0, keepdims=True
         )
+        if np.linalg.norm(mean) < DIRECTION_TOLERANCE:
+            raise ValueError("Prototypes of one kind must not cancel out")
         return UnitNormalizer.normalize(mean).ravel()

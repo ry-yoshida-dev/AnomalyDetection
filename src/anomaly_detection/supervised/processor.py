@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import override
+from typing import cast, override
 
 import numpy as np
 from data_scaler import FeatureScaling, Scaler
@@ -49,13 +49,19 @@ class SupervisedProcessor(AnomalyProcessor):
         ------
         TypeError
             If the features are not a plain numeric NumPy array, such as a masked
-            array or a matrix, or the labels are not boolean.
+            array or a matrix, or the labels are not a plain boolean NumPy array.
         ValueError
             If the features are not a finite, non-empty 2-D matrix, their scaled
             values cannot be represented, the shapes do not match, or y does not
             contain both normal and anomalous samples.
         """
         self._scaler = None
+        if not isinstance(cast(object, y), np.ndarray) or isinstance(
+            y, np.ma.MaskedArray | np.matrix
+        ):
+            raise TypeError(
+                f"y must be a plain NumPy array, got {type(y).__name__}; convert it with np.asarray"
+            )
         if not np.issubdtype(y.dtype, np.bool_):
             raise TypeError(f"y must be boolean, got dtype {y.dtype}")
         if y.ndim != 1 or y.size == 0:

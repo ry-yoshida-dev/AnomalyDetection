@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 from typing import override
 
@@ -14,18 +15,31 @@ class HistGradientBoostingParameters(SupervisedParameters):
     """
     Parameters for scikit-learn's HistGradientBoostingClassifier.
 
+    Early stopping is off, because its validation split would hold back some of
+    the few anomalous samples and fail when there are too few to stratify.
+
     Attributes
     ----------
     max_iter : int
         Number of boosting iterations.
     learning_rate : float
-        Shrinkage applied to each tree.
+        Shrinkage applied to each tree, in (0, inf).
     max_depth : int | None
         Maximum tree depth; no limit when None.
     min_samples_leaf : int
         Minimum number of samples required at a leaf.
     random_state : int | None
-        Seed for subsampling and early stopping.
+        Seed for subsampling the samples that set the histogram bins, in
+        [0, 2**32 - 1].
+
+    Raises
+    ------
+    TypeError
+        If a count or the seed is not an integer, or the learning rate is not a
+        real number.
+    ValueError
+        If a count or the learning rate is not positive and finite, or the seed
+        is out of range.
     """
 
     max_iter: int = 100
@@ -42,11 +56,13 @@ class HistGradientBoostingParameters(SupervisedParameters):
             min_samples_leaf=self.min_samples_leaf,
             random_state=self.random_state,
         )
+        ParameterValidator.require_real_numbers(learning_rate=self.learning_rate)
+        ParameterValidator.require_random_state(self.random_state)
         if self.max_iter <= 0:
             raise ValueError("max_iter must be greater than 0")
-        if not self.learning_rate > 0.0:
+        if not 0.0 < self.learning_rate < math.inf:
             raise ValueError(
-                f"learning_rate must be greater than 0, got {self.learning_rate}"
+                f"learning_rate must be positive and finite, got {self.learning_rate}"
             )
         if self.max_depth is not None and self.max_depth <= 0:
             raise ValueError("max_depth must be greater than 0 when set")
@@ -69,6 +85,7 @@ class HistGradientBoostingParameters(SupervisedParameters):
                 learning_rate=self.learning_rate,
                 max_depth=self.max_depth,
                 min_samples_leaf=self.min_samples_leaf,
+                early_stopping=False,
                 class_weight="balanced" if self.is_class_balanced else None,
                 random_state=self.random_state,
             ),

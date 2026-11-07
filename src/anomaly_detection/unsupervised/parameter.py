@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import override
 
 from ..parameter import AnomalyParameters
+from ..parameter_validator import ParameterValidator
 from .processor import UnsupervisedProcessor
 
 
@@ -21,6 +22,8 @@ class UnsupervisedParameters(AnomalyParameters, ABC):
 
     Raises
     ------
+    TypeError
+        If contamination is not a real number.
     ValueError
         If contamination is outside (0, 1).
     """
@@ -28,6 +31,7 @@ class UnsupervisedParameters(AnomalyParameters, ABC):
     contamination: float = 0.01
 
     def __post_init__(self) -> None:
+        ParameterValidator.require_real_numbers(contamination=self.contamination)
         if not 0.0 < self.contamination < 1.0:
             raise ValueError(
                 f"contamination must be in (0, 1), got {self.contamination}"

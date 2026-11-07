@@ -19,7 +19,9 @@ class UnsupervisedProcessor(AnomalyProcessor, ABC):
 
     The threshold is the quantile of the training scores that leaves the
     contamination fraction above it, so all methods share one meaning of
-    contamination regardless of their score scale.
+    contamination regardless of their score scale. Each training sample is
+    scored without its own influence, so the threshold also holds for unseen
+    samples.
 
     Attributes
     ----------
@@ -50,13 +52,17 @@ class UnsupervisedProcessor(AnomalyProcessor, ABC):
             array or a matrix.
         ValueError
             If the features are not a finite, non-empty 2-D matrix, their scaled
-            values cannot be represented, or there are too few samples for the
-            method.
+            values cannot be represented, the samples are all identical, or there
+            are too few samples for the method.
         """
         self._scaler = None
         self._threshold = None
         scaler: Scaler = self.scaling.build_scaler()
-        training_scores: FloatArray = self._fit_scorer(scaler.fit_transform(X))
+        scaled: FloatArray = scaler.fit_transform(X)
+        # Identical samples carry no spread to learn, and some methods would then never flag.
+        if not np.ptp(scaled, axis=0).any():
+            raise ValueError("Training samples must not all be identical")
+        training_scores: FloatArray = self._fit_scorer(scaled)
         self._threshold = float(np.quantile(training_scores, 1.0 - self.contamination))
         self._scaler = scaler
 
@@ -96,7 +102,7 @@ class UnsupervisedProcessor(AnomalyProcessor, ABC):
 
     @abstractmethod
     def _fit_scorer(self, X: FloatArray) -> FloatArray:
-        """Fit on scaled samples and return their scores, excluding each sample from its own reference."""
+        """Fit on scaled samples and return their scores, each computed without the sample's own influence."""
 
     @abstractmethod
     def _score_scaled(self, X: FloatArray) -> FloatArray: ...
