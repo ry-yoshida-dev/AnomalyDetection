@@ -93,7 +93,8 @@ is_anomalous = MutualScoringParameters().build_processor().predict(X_batch)
 - Feature scaling comes from [DataScaler](https://github.com/ry-yoshida-dev/DataScaler), and `FeatureScaling` is re-exported here. Apart from it, the package depends only on NumPy and scikit-learn.
 - Mutual scoring assumes anomalies are rare in the batch. Its scores and threshold are relative to the batch, so they are not comparable across batches, and batches must have more samples than `n_neighbors`.
 - Prototypes must come from the same embedding space as the samples. Several prototypes of one kind are averaged by direction.
-- NaN and infinite features are rejected with `ValueError`, also for classifiers that could handle them.
+- Features must be a plain numeric NumPy array, the same for every family. Masked arrays and `np.matrix` are rejected with `TypeError`, because their semantics would be lost; convert other inputs with `np.asarray`.
+- NaN and infinite features are rejected with `ValueError`, also for classifiers that could handle them. Supervised and unsupervised processors also raise `ValueError` when scaled features cannot be represented, such as by overflowing.
 
 ## Development
 

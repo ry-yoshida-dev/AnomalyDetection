@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import unittest
+import warnings
 from importlib.metadata import requires
 from typing import cast
 
@@ -40,4 +41,17 @@ class TestFeatureValidator(unittest.TestCase):
     def test_rejects_invalid_shapes_and_values(self) -> None:
         for X in (np.zeros(3), np.zeros((0, 3)), np.array([[np.nan, 1.0]])):
             with self.subTest(shape=X.shape), self.assertRaises(ValueError):
+                FeatureValidator.require_matrix(X)
+
+    def test_rejects_arrays_whose_semantics_would_be_lost(self) -> None:
+        masked: NumericArray = np.ma.masked_invalid(
+            np.array([[np.nan, 1.0], [2.0, 3.0]])
+        )
+        with warnings.catch_warnings():
+            # NumPy discourages matrices, which is why callers may still pass one.
+            warnings.simplefilter("ignore", PendingDeprecationWarning)
+            matrix: NumericArray = cast(NumericArray, np.asmatrix(np.zeros((2, 3))))
+        not_an_array: NumericArray = cast(NumericArray, cast(object, [[0.0, 1.0]]))
+        for X in (masked, matrix, not_an_array):
+            with self.subTest(type=type(X).__name__), self.assertRaises(TypeError):
                 FeatureValidator.require_matrix(X)

@@ -113,3 +113,20 @@ class TestMutualScoring(unittest.TestCase):
         for threshold in (0.0, float("nan")):
             with self.subTest(threshold=threshold), self.assertRaises(ValueError):
                 _ = MutualScoringParameters(deviation_threshold=threshold)
+
+
+class TestFeatureChecks(unittest.TestCase):
+    def test_rejects_masked_features_like_the_scaled_families(self) -> None:
+        # Masking hides the NaN, which would otherwise reach the scores.
+        X: NDArray[np.float64] = SyntheticFeatures.normal()
+        X[0, 0] = np.nan
+        cases: tuple[tuple[AnomalyProcessor, NDArray[np.float64]], ...] = (
+            (ORTHOGONAL_PROTOTYPES.build_processor(), np.ma.masked_invalid(X[:, :2])),
+            (EUCLIDEAN_SCORING.build_processor(), np.ma.masked_invalid(X)),
+        )
+        for processor, masked in cases:
+            with (
+                self.subTest(processor=type(processor).__name__),
+                self.assertRaises(TypeError),
+            ):
+                _ = processor.score(masked)

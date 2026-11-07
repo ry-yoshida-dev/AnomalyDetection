@@ -85,6 +85,13 @@ class TestAllMethods(unittest.TestCase):
         processor: UnsupervisedProcessor = MahalanobisParameters().build_processor()
         with self.assertRaises(ValueError):
             processor.fit(np.array([[np.nan, 1.0], [0.0, 1.0]]))
+        with self.assertRaises(TypeError):
+            processor.fit(np.ma.masked_array(SyntheticFeatures.normal()))
+        processor.fit(SyntheticFeatures.normal())
+        with self.assertRaises(ValueError):
+            _ = processor.score(np.array([[np.inf, 1.0]]))
+        with self.assertRaises(TypeError):
+            _ = processor.score(np.ma.masked_array(SyntheticFeatures.normal()))
 
 
 class TestScaling(unittest.TestCase):

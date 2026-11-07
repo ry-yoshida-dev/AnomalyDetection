@@ -8,7 +8,6 @@ import numpy as np
 from data_scaler import FeatureScaling, Scaler
 from sklearn.exceptions import NotFittedError
 
-from ..feature_validator import FeatureValidator
 from ..processor import AnomalyProcessor
 from ..types import FloatArray, NumericArray
 
@@ -47,14 +46,15 @@ class UnsupervisedProcessor(AnomalyProcessor, ABC):
         Raises
         ------
         TypeError
-            If the features are not numeric.
+            If the features are not a plain numeric NumPy array, such as a masked
+            array or a matrix.
         ValueError
-            If the features are not a finite, non-empty 2-D matrix, or there are
-            too few samples for the method.
+            If the features are not a finite, non-empty 2-D matrix, their scaled
+            values cannot be represented, or there are too few samples for the
+            method.
         """
         self._scaler = None
         self._threshold = None
-        FeatureValidator.require_matrix(X)
         scaler: Scaler = self.scaling.build_scaler()
         training_scores: FloatArray = self._fit_scorer(scaler.fit_transform(X))
         self._threshold = float(np.quantile(training_scores, 1.0 - self.contamination))
@@ -78,6 +78,11 @@ class UnsupervisedProcessor(AnomalyProcessor, ABC):
         if self._threshold is None:
             raise NotFittedError("Processor is not fitted yet. Call fit() first.")
         return self._threshold
+
+    @override
+    def _validate_features(self, X: NumericArray) -> None:
+        # The scaler checks the features as strictly, so a second pass would only cost time.
+        pass
 
     @override
     def _compute_scores(self, X: NumericArray) -> FloatArray:

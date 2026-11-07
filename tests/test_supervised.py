@@ -96,6 +96,23 @@ class TestSupervisedProcessor(unittest.TestCase):
         with self.assertRaises(ValueError):
             processor.fit(X, Y[:-1])
 
+    def test_rejects_non_vector_labels(self) -> None:
+        processor: SupervisedProcessor = RandomForestParameters().build_processor()
+        with self.assertRaises(ValueError):
+            processor.fit(X, Y.reshape(-1, 1))
+
+    def test_rejects_invalid_features(self) -> None:
+        processor: SupervisedProcessor = RandomForestParameters().build_processor()
+        with self.assertRaises(ValueError):
+            processor.fit(np.full_like(X, np.nan), Y)
+        with self.assertRaises(TypeError):
+            processor.fit(np.ma.masked_array(X), Y)
+        processor.fit(X, Y)
+        with self.assertRaises(ValueError):
+            _ = processor.score(np.full_like(X, np.inf))
+        with self.assertRaises(TypeError):
+            _ = processor.score(np.ma.masked_array(X))
+
     def test_rejects_a_single_class(self) -> None:
         processor: SupervisedProcessor = RandomForestParameters().build_processor()
         with self.assertRaises(ValueError):

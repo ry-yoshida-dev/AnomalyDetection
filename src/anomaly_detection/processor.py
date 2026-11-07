@@ -32,13 +32,15 @@ class AnomalyProcessor(ABC):
         Raises
         ------
         TypeError
-            If the features are not numeric.
+            If the features are not a plain numeric NumPy array, such as a masked
+            array or a matrix.
         ValueError
-            If the features are not a finite, non-empty 2-D matrix.
+            If the features are not a finite, non-empty 2-D matrix, or their
+            scaled values cannot be represented.
         NotFittedError
             If the processor requires fitting and has not been fitted.
         """
-        FeatureValidator.require_matrix(X)
+        self._validate_features(X)
         return self._compute_scores(X)
 
     def predict(self, X: NumericArray) -> BoolArray:
@@ -58,14 +60,20 @@ class AnomalyProcessor(ABC):
         Raises
         ------
         TypeError
-            If the features are not numeric.
+            If the features are not a plain numeric NumPy array, such as a masked
+            array or a matrix.
         ValueError
-            If the features are not a finite, non-empty 2-D matrix.
+            If the features are not a finite, non-empty 2-D matrix, or their
+            scaled values cannot be represented.
         NotFittedError
             If the processor requires fitting and has not been fitted.
         """
         scores: FloatArray = self.score(X)
         return scores > self._resolve_threshold(scores)
+
+    def _validate_features(self, X: NumericArray) -> None:
+        """Check the features before scoring; families that scale them leave it to the scaler."""
+        FeatureValidator.require_matrix(X)
 
     @abstractmethod
     def _compute_scores(self, X: NumericArray) -> FloatArray: ...

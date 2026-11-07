@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 
 from .types import NumericArray
@@ -8,6 +10,8 @@ from .types import NumericArray
 class FeatureValidator:
     """
     Runtime checks of feature matrices.
+
+    The checks match those of DataScaler, so every family accepts the same inputs.
     """
 
     @staticmethod
@@ -23,10 +27,19 @@ class FeatureValidator:
         Raises
         ------
         TypeError
-            If the features are not numeric.
+            If the features are not a plain numeric NumPy array. Masked arrays and
+            matrices are rejected, because computations would drop their semantics.
         ValueError
             If the features are not 2-D, are empty, or contain NaN or infinity.
         """
+        if not isinstance(cast(object, X), np.ndarray):
+            raise TypeError(
+                f"X must be a NumPy array, got {type(X).__name__}; convert it with np.asarray"
+            )
+        if isinstance(X, np.ma.MaskedArray | np.matrix):
+            raise TypeError(
+                f"X must be a plain NumPy array, got {type(X).__name__}, whose semantics would be lost"
+            )
         is_numeric: bool = np.issubdtype(X.dtype, np.integer) or np.issubdtype(
             X.dtype, np.floating
         )
