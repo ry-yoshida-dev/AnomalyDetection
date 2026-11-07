@@ -1,3 +1,4 @@
+from .empirical_cumulative_distribution import EmpiricalCumulativeDistributionParameters
 from .isolation_forest import IsolationForestParameters
 from .k_nearest_neighbors import KNearestNeighborsParameters
 from .local_outlier_factor import LocalOutlierFactorParameters
@@ -8,6 +9,7 @@ from .principal_component import PrincipalComponentParameters
 from .processor import UnsupervisedProcessor
 
 __all__ = [
+    "EmpiricalCumulativeDistributionParameters",
     "IsolationForestParameters",
     "KNearestNeighborsParameters",
     "LocalOutlierFactorParameters",

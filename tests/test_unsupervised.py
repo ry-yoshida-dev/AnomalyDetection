@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import unittest
 from typing import cast
 
@@ -9,6 +10,7 @@ from sklearn.exceptions import NotFittedError
 
 from anomaly_detection import FeatureScaling, NeighborsMetric
 from anomaly_detection.unsupervised import (
+    EmpiricalCumulativeDistributionParameters,
     IsolationForestParameters,
     KNearestNeighborsParameters,
     LocalOutlierFactorParameters,
@@ -30,6 +32,7 @@ DISTANCE_METHODS: tuple[UnsupervisedParameters, ...] = (
     OneClassSVMParameters(),
     MahalanobisParameters(),
     KNearestNeighborsParameters(),
+    EmpiricalCumulativeDistributionParameters(),
 )
 ALL_METHODS: tuple[UnsupervisedParameters, ...] = (
     *DISTANCE_METHODS,
@@ -223,6 +226,41 @@ class TestCosineScaling(unittest.TestCase):
                 _ = KNearestNeighborsParameters(
                     metric=NeighborsMetric.COSINE, scaling=scaling
                 )
+
+
+class TestEmpiricalCumulativeDistribution(unittest.TestCase):
+    def test_training_tail_probabilities_leave_the_sample_out(self) -> None:
+        X: NDArray[np.float64] = np.array([[0.0], [1.0], [2.0], [3.0]])
+        processor: UnsupervisedProcessor = EmpiricalCumulativeDistributionParameters(
+            contamination=0.25
+        ).build_processor()
+        processor.fit(X)
+        # Counted among itself and the 3 others, the largest value has a right
+        # tail probability of 1/4, as the smallest has a left one.
+        self.assertAlmostEqual(processor.threshold, math.log(4.0))
+        np.testing.assert_allclose(processor.score(np.array([[4.0]])), [math.log(5.0)])
+
+    def test_scores_do_not_change_under_monotonic_transforms(self) -> None:
+        X: NDArray[np.float64] = SyntheticFeatures.normal()
+        unseen: NDArray[np.float64] = SyntheticFeatures.normal(n_samples=50, seed=3)
+        raw: UnsupervisedProcessor = (
+            EmpiricalCumulativeDistributionParameters().build_processor()
+        )
+        transformed: UnsupervisedProcessor = (
+            EmpiricalCumulativeDistributionParameters().build_processor()
+        )
+        raw.fit(X)
+        transformed.fit(np.exp(X))
+        np.testing.assert_allclose(raw.score(unseen), transformed.score(np.exp(unseen)))
+
+    def test_uses_the_tail_each_feature_is_skewed_toward(self) -> None:
+        X: NDArray[np.float64] = np.random.default_rng(0).exponential(size=(500, 2))
+        processor: UnsupervisedProcessor = EmpiricalCumulativeDistributionParameters(
+            contamination=0.05
+        ).build_processor()
+        processor.fit(X)
+        self.assertTrue(processor.predict(np.array([[20.0, 20.0]]))[0])
+        self.assertFalse(processor.predict(np.array([[1.0, 1.0]]))[0])
 
 
 class TestPrincipalComponent(unittest.TestCase):
