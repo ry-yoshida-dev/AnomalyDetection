@@ -5,7 +5,7 @@ from data_scaler import FeatureScaling
 from sklearn.svm import OneClassSVM
 
 from ..parameter import UnsupervisedParameters
-from ..processors import SampleScoringProcessor
+from ..sample_scoring import SampleScoringProcessor
 from ..svm_gamma import SVMGamma
 from ..svm_kernel import SVMKernel
 

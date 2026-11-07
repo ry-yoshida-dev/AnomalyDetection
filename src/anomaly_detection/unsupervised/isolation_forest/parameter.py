@@ -6,7 +6,7 @@ from sklearn.ensemble import IsolationForest
 
 from ...parameter_validator import ParameterValidator
 from ..parameter import UnsupervisedParameters
-from ..processors import SampleScoringProcessor
+from ..sample_scoring import SampleScoringProcessor
 
 
 @dataclass(frozen=True)

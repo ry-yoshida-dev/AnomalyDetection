@@ -8,8 +8,8 @@ import numpy as np
 from ...feature_validator import FeatureValidator
 from ...parameter import AnomalyParameters
 from ...types import FloatArray, NumericArray
-from ..processors import PrototypeSimilarityProcessor
 from ..unit_normalizer import UnitNormalizer
+from .processor import PrototypeSimilarityProcessor
 
 
 @dataclass(frozen=True, eq=False)

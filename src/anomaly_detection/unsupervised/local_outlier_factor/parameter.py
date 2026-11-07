@@ -7,7 +7,7 @@ from sklearn.neighbors import LocalOutlierFactor
 from ...neighbors_metric import NeighborsMetric
 from ...parameter_validator import ParameterValidator
 from ..parameter import UnsupervisedParameters
-from ..processors import LocalOutlierFactorProcessor
+from .processor import LocalOutlierFactorProcessor
 
 
 @dataclass(frozen=True)

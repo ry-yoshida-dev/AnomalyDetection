@@ -11,4 +11,4 @@ Anomaly detection as binary classification, for when anomalous samples are avail
 | [classifier.py](./classifier.py) | `ClassifierLike`, the structural type of wrapped classifiers. |
 | [parameter.py](./parameter.py) | `SupervisedParameters`, the abstract base class holding the threshold and class balancing. |
 | [processor.py](./processor.py) | `SupervisedProcessor`, which implements scaling, `fit`, and scoring. |
-| [methods/](./methods/README.md) | Per-method parameter classes. |
+| [parameters/](./parameters/README.md) | `SupervisedParameters` implementations, one per classifier. |

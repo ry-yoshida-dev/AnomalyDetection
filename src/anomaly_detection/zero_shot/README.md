@@ -9,5 +9,5 @@ Methods that need no training samples of the target, and therefore have no `fit`
 | Component | Description |
 |-----------|-------------|
 | [unit_normalizer.py](./unit_normalizer.py) | `UnitNormalizer`, which scales vectors for cosine similarity. |
-| [methods/](./methods/README.md) | Per-method parameter classes. |
-| [processors/](./processors/README.md) | Concrete processors, split by where the reference for normality comes from. |
+| [prototype_similarity/](./prototype_similarity/README.md) | Parameters and processor comparing samples with given embeddings of normal and anomalous. |
+| [mutual_scoring/](./mutual_scoring/README.md) | Parameters and processor comparing samples with the rest of their batch. |

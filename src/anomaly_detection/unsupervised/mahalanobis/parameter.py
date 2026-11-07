@@ -5,7 +5,7 @@ from data_scaler import FeatureScaling
 from sklearn.covariance import LedoitWolf
 
 from ..parameter import UnsupervisedParameters
-from ..processors import MahalanobisProcessor
+from .processor import MahalanobisProcessor
 
 
 @dataclass(frozen=True)

@@ -4,7 +4,7 @@ from typing import override
 from ...neighbors_metric import NeighborsMetric
 from ...parameter import AnomalyParameters
 from ...parameter_validator import ParameterValidator
-from ..processors import MutualScoringProcessor
+from .processor import MutualScoringProcessor
 
 
 @dataclass(frozen=True)

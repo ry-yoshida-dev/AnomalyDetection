@@ -1,10 +1,10 @@
 from .classifier import ClassifierLike
-from .methods import (
+from .parameter import SupervisedParameters
+from .parameters import (
     HistGradientBoostingParameters,
     LogisticRegressionParameters,
     RandomForestParameters,
 )
-from .parameter import SupervisedParameters
 from .processor import SupervisedProcessor
 
 __all__ = [

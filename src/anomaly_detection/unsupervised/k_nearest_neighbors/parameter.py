@@ -7,7 +7,7 @@ from sklearn.neighbors import NearestNeighbors
 from ...neighbors_metric import NeighborsMetric
 from ...parameter_validator import ParameterValidator
 from ..parameter import UnsupervisedParameters
-from ..processors import KNearestNeighborsProcessor
+from .processor import KNearestNeighborsProcessor
 
 
 @dataclass(frozen=True)
